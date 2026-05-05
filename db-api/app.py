@@ -17,7 +17,7 @@ def get_db_connection():
         password=os.getenv('DB_PASSWORD', 'CoolPass321')
     )
 
-@app.route('/api/db-healthcheck', methods=['GET'])
+@app.route('/api/db-api/db-healthcheck', methods=['GET'])
 def db_healthcheck():
     # Open postgres connection and check if it's alive
     try:
@@ -27,7 +27,7 @@ def db_healthcheck():
     except psycopg2.Error as e:
         return 'DB is down: ' + str(e), 500
     
-@app.route('/api/get-user/<int:user_id>', methods=['GET'])
+@app.route('/api/db-api/get-user/<int:user_id>', methods=['GET'])
 def get_user(user_id):
     conn = get_db_connection()
     if not conn:
@@ -51,7 +51,7 @@ def get_user(user_id):
     else:
         return 'User not found', 404
 
-@app.route('/api/create-user', methods=['POST'])
+@app.route('/api/db-api/create-user', methods=['POST'])
 def create_user():
     name = request.form.get('name')
     user_type = request.form.get('user_type')
@@ -72,7 +72,7 @@ def create_user():
 
     return 'User inserted', 200
 
-@app.route('/api/get-schedule', methods=['GET'])
+@app.route('/api/db-api/get-schedule', methods=['GET'])
 def get_schedule():
     conn = get_db_connection()
     if not conn:
@@ -80,7 +80,7 @@ def get_schedule():
 
     cur = conn.cursor()
     
-    cur.execute('SELECT * FROM Schedule')
+    cur.execute('SELECT * FROM "Schedule"')
     schedule = cur.fetchall()
 
     cur.close()
@@ -88,7 +88,7 @@ def get_schedule():
 
     return schedule, 200
 
-@app.route('/api/insert-schedule-item', methods=['POST'])
+@app.route('/api/db-api/insert-schedule-item', methods=['POST'])
 def insert_schedule_item():
     user_id = request.form.get('user_id')
     trainer_id = request.form.get('trainer_id')
@@ -108,7 +108,7 @@ def insert_schedule_item():
 
     return 'Queried successfully', 200
 
-@app.route('/api/insert-parking-item', methods=['POST'])
+@app.route('/api/db-api/insert-parking-item', methods=['POST'])
 def insert_parking_item():
     user_id = request.form.get('user_id')
     license_plate = request.form.get('license_plate')
@@ -133,7 +133,7 @@ def insert_parking_item():
     return 'Parking item inserted', 200
 
 
-@app.route('/api/get-parking/<int:user_id>', methods=['GET'])
+@app.route('/api/db-api/get-parking/<int:user_id>', methods=['GET'])
 def get_parking_by_user_id(user_id):
     conn = get_db_connection()
     if not conn:
@@ -156,7 +156,7 @@ def get_parking_by_user_id(user_id):
     } for row in rows], 200
 
 
-@app.route('/api/insert-credit-card', methods=['POST'])
+@app.route('/api/db-api/insert-credit-card', methods=['POST'])
 def insert_credit_card():
     user_id = request.form.get('user_id')
     card_number = request.form.get('card_number')
@@ -180,7 +180,7 @@ def insert_credit_card():
     return 'Credit card inserted', 200
 
 
-@app.route('/api/get-credit-card/<int:user_id>', methods=['GET'])
+@app.route('/api/db-api/get-credit-card/<int:user_id>', methods=['GET'])
 def get_credit_card_by_user_id(user_id):
     conn = get_db_connection()
     if not conn:
@@ -200,6 +200,24 @@ def get_credit_card_by_user_id(user_id):
         'expiry': row[3],
         'cvc': row[4]
     } for row in rows], 200
+
+@app.route('/api/db-api/delete-user/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    conn = get_db_connection()
+    if not conn:
+        return 'DB failure', 500
+    cur = conn.cursor()
+    cur.execute('DELETE FROM "User" WHERE "User ID" = %s', (user_id,))
+    conn.commit()
+
+    rows_deleted = cur.rowcount
+
+    cur.close()
+    conn.close()
+
+    if rows_deleted == 0:
+        return 'User not found', 404
+    return 'User deleted', 200
 
 
 if __name__ == '__main__':
